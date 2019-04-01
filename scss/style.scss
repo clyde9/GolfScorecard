@@ -1,3 +1,7 @@
-.baseRow{
+.row{
+  margin: 10px 0;
   display: flex;
+}
+.col{
+  margin: 0 10px;
 }
