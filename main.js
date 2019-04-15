@@ -1,3 +1,55 @@
+class PlayerGroup{
+    constructor(){
+        this.collection = [];
+    }
+    addPlayer(){
+    
+    }
+    removePlayer(){
+    
+    }
+}
+
+class Player{
+    constructor(name, tee){
+        this.name = name;
+        this.tee = tee;
+        
+        this.scores = [];
+        for (let i = 0; i < 18; i++){
+            this.scores.push(0);
+        }
+    }
+    changeScore(hole, score){
+        this.scores[hole] = score;
+    }
+    rename(){
+    
+    }
+    changeTee(){
+    
+    }
+    calculateOutScore(){
+        let outScore = 0;
+        for (let i = 0; i < 9; i++){
+            outScore += this.scores[i];
+        }
+        return outScore;
+    }
+    calculateInScore(){
+        let inScore = 0;
+        for (let i = 9; i < 18; i++){
+            inScore += this.scores[i];
+        }
+        return inScore;
+    }
+    calculateTotalScore(){
+        return this.calculateOutScore() + this.calculateInScore();
+    }
+}
+
+
+
 function buildHoles() {
     $(".container").append(`<div class="row holesRow"><div class="col">Holes</div></div>`);
     for (let i = 0; i < 9; i++) {
