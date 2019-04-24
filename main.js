@@ -9,21 +9,21 @@ class PlayerGroup {
             name = "New Player";
         }
         let tee = $('#teeSelect').val();
-        let player = new Player(name, tee);
+        let player = new Player(name, tee, this.collection.length);
         this.collection.push(player);
         makePlayerTable(player);
         
-    }
-    
-    removePlayer() {
-    
+        if (this.collection.length === 4) {
+            $(`.addPlayerForm`).html('');
+        }
     }
 }
 
 class Player {
-    constructor(name, tee) {
+    constructor(name, tee, index) {
         this.name = name;
         this.tee = tee;
+        this.index = index;
         
         this.scores = [];
         for (let i = 0; i < 18; i++) {
@@ -31,16 +31,31 @@ class Player {
         }
     }
     
-    changeScore(hole, score) {
-        this.scores[hole] = score;
+    changeScore(hole) {
+        this.scores[hole] = $(`.p${this.index}h${hole}`).val();
+        if (hole < 9){
+            $(`.p${this.index}hOut`).html(this.calculateOutScore())
+        } else {
+            $(`.p${this.index}hIn`).html(this.calculateInScore())
+        }
+        $(`.p${this.index}hTotal`).html(this.calculateTotalScore())
     }
     
     rename() {
-    
+        this.name = $(`.p${this.index}Name`).html();
     }
     
     changeTee() {
-    
+        this.tee = $(`#teeChange${this.index}`).val();
+        
+        $(`.p${this.index} thead`).html('');
+        $(`.p${this.index} tbody`).html('');
+        
+        buildHolesRow(this.index);
+        buildParRow(this.index, this.tee);
+        buildYardageRow(this.index, this.tee);
+        buildHandicapRow(this.index, this.tee);
+        buildScoreRow(this.index);
     }
     
     calculateOutScore() {
@@ -74,10 +89,10 @@ function makeAddPlayerForm() {
             <div>
                 <label for="teeSelect">Tee:</label>
                 <select id="teeSelect">
-                    <option value="2">Men</option>
-                    <option value="3">Women</option>
                     <option value="0">Pro</option>
                     <option value="1">Champion</option>
+                    <option value="2">Men</option>
+                    <option value="3">Women</option>
                 </select>
             </div>
             <button onclick="players.addPlayer()">Add Player</button>
@@ -87,12 +102,24 @@ function makeAddPlayerForm() {
 function makePlayerTable(player) {
     let pNumber = players.collection.indexOf(player);
     $('.scorecards').append(`
-        <table class="table table-bordered table-sm player${pNumber}">
-            <thead>
-            </thead>
-            <tbody>
-            </tbody>
-        </table>`);
+        <div class="p${pNumber} playerCard">
+            <table class="table table-bordered table-sm">
+                <thead>
+                </thead>
+                <tbody>
+                </tbody>
+            </table>
+            <div>
+                <label for="teeChange${pNumber}">Change Tee:</label>
+                <select onchange="players.collection[${pNumber}].changeTee()" id="teeChange${pNumber}">
+                    <option value="0">Pro</option>
+                    <option value="1">Champion</option>
+                    <option value="2">Men</option>
+                    <option value="3">Women</option>
+                </select>
+            </div>
+        </div>`);
+    $(`#teeChange${pNumber} option:eq(${player.tee})`).attr('selected', 'selected');
     buildHolesRow(pNumber);
     buildParRow(pNumber, player.tee);
     buildYardageRow(pNumber, player.tee);
@@ -101,7 +128,7 @@ function makePlayerTable(player) {
 }
 
 function buildHolesRow(pNumber) {
-    $(`.player${pNumber} thead`).append(`<tr class="holesRow${pNumber}"><th scope="col">${players.collection[pNumber].name}</th></tr>`);
+    $(`.p${pNumber} thead`).append(`<tr class="holesRow${pNumber}"><th class="p${pNumber}Name" contenteditable="true" onkeyup="players.collection[${pNumber}].rename()" scope="col">${players.collection[pNumber].name}</th></tr>`);
     for (let i = 0; i < 9; i++) {
         $(`.holesRow${pNumber}`).append(`<th scope="col">${i + 1}</th>`);
     }
@@ -113,51 +140,76 @@ function buildHolesRow(pNumber) {
 }
 
 function buildParRow(pNumber, tee) {
-    $(`.player${pNumber} tbody`).append(`<tr class="parRow${pNumber}"><th scope="row">Par</th></tr>`);
+    $(`.p${pNumber} tbody`).append(`<tr class="parRow${pNumber}"><th scope="row">Par</th></tr>`);
     let outPar = 0;
-    for (let j = 0; j < 9; j++) {
-        $(`.parRow${pNumber}`).append(`<td>${courseInfo.data.holes[j].teeBoxes[tee].par}</td>`);
-        outPar += courseInfo.data.holes[j].teeBoxes[tee].par;
+    for (let i = 0; i < 9; i++) {
+        $(`.parRow${pNumber}`).append(`<td>${courseInfo.data.holes[i].teeBoxes[tee].par}</td>`);
+        outPar += courseInfo.data.holes[i].teeBoxes[tee].par;
     }
     $(`.parRow${pNumber}`).append(`<td>${outPar}</td>`);
     let inPar = 0;
-    for (let j = 9; j < 18; j++) {
-        $(`.parRow${pNumber}`).append(`<td>${courseInfo.data.holes[j].teeBoxes[tee].par}</td>`);
-        inPar += courseInfo.data.holes[j].teeBoxes[tee].par;
+    for (let i = 9; i < 18; i++) {
+        $(`.parRow${pNumber}`).append(`<td>${courseInfo.data.holes[i].teeBoxes[tee].par}</td>`);
+        inPar += courseInfo.data.holes[i].teeBoxes[tee].par;
     }
     $(`.parRow${pNumber}`).append(`<td>${inPar}</td><td>${outPar + inPar}</td>`);
 }
 
 function buildYardageRow(pNumber, tee) {
-    $(`.player${pNumber} tbody`).append(`<tr class="yardageRow${pNumber}"><th scope="row">Yardage</th></tr>`);
+    $(`.p${pNumber} tbody`).append(`<tr class="yardageRow${pNumber}"><th scope="row">Yardage</th></tr>`);
     let outYards = 0;
-    for (let j = 0; j < 9; j++) {
-        $(`.yardageRow${pNumber}`).append(`<td>${courseInfo.data.holes[j].teeBoxes[tee].yards}</td>`);
-        outYards += courseInfo.data.holes[j].teeBoxes[tee].yards;
+    for (let i = 0; i < 9; i++) {
+        $(`.yardageRow${pNumber}`).append(`<td>${courseInfo.data.holes[i].teeBoxes[tee].yards}</td>`);
+        outYards += courseInfo.data.holes[i].teeBoxes[tee].yards;
     }
     $(`.yardageRow${pNumber}`).append(`<td>${outYards}</td>`);
     let inYards = 0;
-    for (let j = 9; j < 18; j++) {
-        $(`.yardageRow${pNumber}`).append(`<td>${courseInfo.data.holes[j].teeBoxes[tee].yards}</td>`);
-        inYards += courseInfo.data.holes[j].teeBoxes[tee].yards;
+    for (let i = 9; i < 18; i++) {
+        $(`.yardageRow${pNumber}`).append(`<td>${courseInfo.data.holes[i].teeBoxes[tee].yards}</td>`);
+        inYards += courseInfo.data.holes[i].teeBoxes[tee].yards;
     }
     $(`.yardageRow${pNumber}`).append(`<td>${inYards}</td><td>${outYards + inYards}</td>`);
 }
 
 function buildHandicapRow(pNumber, tee) {
-    $(`.player${pNumber} tbody`).append(`<tr class="handicapRow${pNumber}"><th scope="row">Handicap</th></tr>`);
-    for (let j = 0; j < 9; j++) {
-        $(`.handicapRow${pNumber}`).append(`<td>${courseInfo.data.holes[j].teeBoxes[tee].hcp}</td>`);
+    $(`.p${pNumber} tbody`).append(`<tr class="handicapRow${pNumber}"><th scope="row">Handicap</th></tr>`);
+    for (let i = 0; i < 9; i++) {
+        $(`.handicapRow${pNumber}`).append(`<td>${courseInfo.data.holes[i].teeBoxes[tee].hcp}</td>`);
     }
     $(`.handicapRow${pNumber}`).append(`<td></td>`);
-    for (let j = 9; j < 18; j++) {
-        $(`.handicapRow${pNumber}`).append(`<td>${courseInfo.data.holes[j].teeBoxes[tee].hcp}</td>`);
+    for (let i = 9; i < 18; i++) {
+        $(`.handicapRow${pNumber}`).append(`<td>${courseInfo.data.holes[i].teeBoxes[tee].hcp}</td>`);
     }
     $(`.handicapRow${pNumber}`).append(`<td></td><td></td>`);
 }
 
 function buildScoreRow(pNumber) {
-
+    $(`.p${pNumber} tbody`).append(`<tr class="scoreRow${pNumber}"><th scope="row">Score</th></tr>`);
+    for (let i = 0; i < 9; i++) {
+        $(`.scoreRow${pNumber}`).append(`
+            <td>
+                <input class="p${pNumber}h${i}" onchange="players.collection[pNumber].changeScore(${i - 1})" type="number"/>
+            </td>`);
+    }
+    
+    $(`.scoreRow${pNumber}`).append(`
+        <td class="p${pNumber}hOut">
+            ${players.collection[pNumber].calculateOutScore()}
+        </td>`);
+    
+    for (let i = 9; i < 18; i++) {
+        $(`.scoreRow${pNumber}`).append(`
+            <td>
+                <input class="p${pNumber}h${i}" onchange="players.collection[pNumber].changeScore(${i - 1})" type="number"/>
+            </td>`);
+    }
+    $(`.scoreRow${pNumber}`).append(`
+        <td class="p${pNumber}hIn">
+            ${players.collection[pNumber].calculateInScore()}
+        </td>
+        <td class="p${pNumber}hTotal">
+            ${players.collection[pNumber].calculateTotalScore()}
+        </td>`);
 }
 
 let players = new PlayerGroup();

@@ -1,2 +1,8 @@
 .addPlayerForm {
   display: flex; }
+
+.container {
+  margin-top: 23px; }
+
+.playerCard {
+  margin-bottom: 20px; }
