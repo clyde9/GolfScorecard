@@ -27,18 +27,25 @@ class Player {
         
         this.scores = [];
         for (let i = 0; i < 18; i++) {
-            this.scores.push(0);
+            this.scores.push(-5);
         }
     }
     
     changeScore(hole) {
-        this.scores[hole] = $(`.p${this.index}h${hole}`).val();
-        if (hole < 9){
+        this.scores[hole] = Number($(`.p${this.index}h${hole}`).val());
+        if (hole < 9) {
             $(`.p${this.index}hOut`).html(this.calculateOutScore())
         } else {
             $(`.p${this.index}hIn`).html(this.calculateInScore())
         }
-        $(`.p${this.index}hTotal`).html(this.calculateTotalScore())
+        $(`.p${this.index}hTotal`).html(this.calculateTotalScore());
+        
+        for (let score of this.scores){
+            if (score <= -5){
+                return;
+            }
+        }
+        this.showMessage();
     }
     
     rename() {
@@ -61,7 +68,7 @@ class Player {
     calculateOutScore() {
         let outScore = 0;
         for (let i = 0; i < 9; i++) {
-            outScore += this.scores[i];
+            outScore += this.scores[i] > -5 ? this.scores[i] : 0;
         }
         return outScore;
     }
@@ -69,7 +76,7 @@ class Player {
     calculateInScore() {
         let inScore = 0;
         for (let i = 9; i < 18; i++) {
-            inScore += this.scores[i];
+            inScore += this.scores[i] > -5 ? this.scores[i] : 0;
         }
         return inScore;
     }
@@ -77,6 +84,20 @@ class Player {
     calculateTotalScore() {
         return this.calculateOutScore() + this.calculateInScore();
     }
+    
+    showMessage() {
+        let message = $(`.message${this.index}`);
+        let total = this.calculateTotalScore();
+        
+        if (total < -5){
+            message.html("You're a pro!");
+        } else if (total < 10){
+            message.html("Not bad.")
+        } else {
+            message.html("Better work on your game.")
+        }
+    }
+    
 }
 
 function makeAddPlayerForm() {
@@ -100,9 +121,8 @@ function makeAddPlayerForm() {
 }
 
 function makePlayerTable(player) {
-    let pNumber = players.collection.indexOf(player);
     $('.scorecards').append(`
-        <div class="p${pNumber} playerCard">
+        <div class="p${player.index} playerCard">
             <table class="table table-bordered table-sm">
                 <thead>
                 </thead>
@@ -110,21 +130,22 @@ function makePlayerTable(player) {
                 </tbody>
             </table>
             <div>
-                <label for="teeChange${pNumber}">Change Tee:</label>
-                <select onchange="players.collection[${pNumber}].changeTee()" id="teeChange${pNumber}">
+                <label for="teeChange${player.index}">Change Tee:</label>
+                <select onchange="players.collection[${player.index}].changeTee()" id="teeChange${player.index}">
                     <option value="0">Pro</option>
                     <option value="1">Champion</option>
                     <option value="2">Men</option>
                     <option value="3">Women</option>
                 </select>
             </div>
+            <div class="message${player.index}"></div>
         </div>`);
-    $(`#teeChange${pNumber} option:eq(${player.tee})`).attr('selected', 'selected');
-    buildHolesRow(pNumber);
-    buildParRow(pNumber, player.tee);
-    buildYardageRow(pNumber, player.tee);
-    buildHandicapRow(pNumber, player.tee);
-    buildScoreRow(pNumber);
+    $(`#teeChange${player.index} option:eq(${player.tee})`).attr('selected', 'selected');
+    buildHolesRow(player.index);
+    buildParRow(player.index, player.tee);
+    buildYardageRow(player.index, player.tee);
+    buildHandicapRow(player.index, player.tee);
+    buildScoreRow(player.index);
 }
 
 function buildHolesRow(pNumber) {
@@ -188,7 +209,10 @@ function buildScoreRow(pNumber) {
     for (let i = 0; i < 9; i++) {
         $(`.scoreRow${pNumber}`).append(`
             <td>
-                <input class="p${pNumber}h${i}" onchange="players.collection[pNumber].changeScore(${i - 1})" type="number"/>
+                <input
+                    class="p${pNumber}h${i} score"
+                    onchange="players.collection[${pNumber}].changeScore(${i})"
+                    value="${players.collection[pNumber].scores[i] > -5 ? players.collection[pNumber].scores[i] : ''}" type="number"/>
             </td>`);
     }
     
@@ -200,7 +224,10 @@ function buildScoreRow(pNumber) {
     for (let i = 9; i < 18; i++) {
         $(`.scoreRow${pNumber}`).append(`
             <td>
-                <input class="p${pNumber}h${i}" onchange="players.collection[pNumber].changeScore(${i - 1})" type="number"/>
+                <input
+                    class="p${pNumber}h${i} score"
+                    onchange="players.collection[${pNumber}].changeScore(${i})"
+                    value="${players.collection[pNumber].scores[i] > -5 ? players.collection[pNumber].scores[i] : ''}" type="number"/>
             </td>`);
     }
     $(`.scoreRow${pNumber}`).append(`
